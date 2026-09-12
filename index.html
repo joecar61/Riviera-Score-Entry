@@ -21,15 +21,7 @@ label{display:block;font-weight:700;font-size:13px;margin:7px 0 4px;color:#4f5b5
 .small{font-size:13px;color:#68736d}.center{text-align:center}
 .nav{display:flex;gap:8px}.nav button{flex:1}
 .hole{font-size:15px;color:#52605a}.big{font-size:26px;font-weight:900}.player{font-size:24px;font-weight:900}
-.strokes{font-size:18px;letter-spacing:1px;margin-top:3px}.star{font-size:22px}
-.scorebuttons{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-top:14px}
-.scorebuttons button{background:#f0f4f1;color:#163f2d;font-size:23px;padding:14px 5px}
-.scorebuttons button.zero{grid-column:span 4;background:#e9efeb;font-size:15px}
-.notice{background:#eef6f0;border-radius:10px;padding:9px;text-align:center;font-size:13px;margin-top:10px}
-.scoretable{width:100%;border-collapse:collapse;font-size:13px}.scoretable th,.scoretable td{padding:7px 4px;border-bottom:1px solid #e2e7e3;text-align:center}.scoretable th:first-child,.scoretable td:first-child{text-align:left}.scoretable th{color:#68736d}.net{font-weight:900}
-.hidden{display:none}.danger{background:#fff0ee;color:#9c2d22}
-.footer{text-align:center;color:#8a938e;font-size:11px;margin-top:15px}
-</style>
+.</style>
 </head>
 <body>
 <div class="app">
@@ -55,7 +47,7 @@ label{display:block;font-weight:700;font-size:13px;margin:7px 0 4px;color:#4f5b5
 <div class="hole">HOLE <span id="holeNum"></span> &nbsp; • &nbsp; PAR <span id="holePar"></span> &nbsp; • &nbsp; HCP <span id="holeHcp"></span></div>
 <div class="big" id="roundLabel">Front 9</div>
 <div class="player" id="playerName"></div>
-<div class="strokes" id="playerStrokes"></div>
+<div class="</div>
 <div class="notice">Tap the score. It immediately moves to the next player.</div>
 <div class="scorebuttons" id="scoreButtons"></div>
 <div class="nav" style="margin-top:12px"><button class="alt" onclick="previousPlayer()">← Back</button><button class="alt" onclick="showCard()">Scorecard</button></div>
@@ -107,22 +99,10 @@ function startRound(){
  scores=Array.from({length:18},()=>Array(players.length).fill(null));hole=0;pi=0;
  document.getElementById("home").classList.add("hidden");document.getElementById("score").classList.remove("hidden");document.getElementById("cardView").classList.add("hidden");renderEntry();
 }
-function strokesFor(hcp, hcpHole){
- // For an 18-hole round played as the same 9 twice, allocate the handicap independently
- // on each 9. This keeps the phone scorecard intuitive: each 9 has the same stroke pattern.
- let base=Math.floor(hcp/9), rem=Math.round(hcp%9);
- return base+(hcpHole<=rem?1:0);
+function<=rem?1:0);
 }
 function renderEntry(){
- let nine=hole<9?0:1, idx=hole%9, c=course[idx], p=players[pi], s=strokesFor(p.hcp,c[1]);
- document.getElementById("holeNum").textContent=idx+1;
- document.getElementById("holePar").textContent=c[0];
- document.getElementById("holeHcp").textContent=c[1];
- document.getElementById("roundLabel").textContent=nine?"Back 9":"Front 9";
- document.getElementById("playerName").textContent=p.name+" • HCP "+p.hcp;
- document.getElementById("playerStrokes").innerHTML=s?'<span class="star">'+("⭐".repeat(Math.min(s,2)))+"</span> "+s+" stroke"+(s===1?"":"s"):"No stroke";
- let b=document.getElementById("scoreButtons");b.innerHTML="";
- for(let n=1;n<=8;n++){let x=document.createElement("button");x.textContent=n;x.onclick=()=>enterScore(n);b.appendChild(x)}
+ let nine=hole<9?0:1, idx=hole%9, c=course[idx], p=players[pi], s=<span class="star">'+("".repeat(Math.min(s,2)))+"</span> "+s+"<=8;n++){let x=document.createElement("button");x.textContent=n;x.onclick=()=>enterScore(n);b.appendChild(x)}
  let x=document.createElement("button");x.textContent="9 or more";x.className="zero";x.onclick=()=>customScore();b.appendChild(x);
 }
 function enterScore(n){scores[hole][pi]=n;advance()}
@@ -137,10 +117,8 @@ function previousPlayer(){if(pi>0){pi--}else if(hole>0){hole--;pi=players.length
 function showCard(){document.getElementById("score").classList.add("hidden");document.getElementById("cardView").classList.remove("hidden");renderCard()}
 function resume(){document.getElementById("cardView").classList.add("hidden");document.getElementById("score").classList.remove("hidden");renderEntry()}
 function newRound(){if(confirm("Start a new round? Scores will be cleared.")){document.getElementById("cardView").classList.add("hidden");document.getElementById("score").classList.add("hidden");document.getElementById("home").classList.remove("hidden");init()}}
-function netFor(p,upTo){let gross=0,st=0;for(let h=0;h<upTo;h++){let v=scores[h][p];if(v!=null){gross+=v;st+=strokesFor(players[p].hcp,course[h%9][1])}}return [gross,st,gross-st]}
-function renderCard(){
- let head='<table class="scoretable"><tr><th>Player</th>'+Array.from({length:18},(_,i)=>'<th>'+((i%9)+1)+(i>8?'B':'')+'</th>').join('')+'<th>Gross</th><th>Net</th></tr>';
- let body=players.map((p,pi)=>{let gross=0,net=0;let cells='';for(let h=0;h<18;h++){let v=scores[h][pi];if(v!=null){let st=strokesFor(p.hcp,course[h%9][1]);gross+=v;net+=v-st;cells+='<td>'+v+(st?' <span style="font-size:10px">★'+(st>1?'★':'')+'</span>':'')+'</td>'}else cells+='<td>–</td>'}return `<tr><td><b>${esc(p.name)}</b></td>${cells}<td><b>${gross||"–"}</b></td><td class="net">${gross?net:"–"}</td></tr>`}).join('');
+function netFor(p,upTo){let gross=0,st=0;for(let h=0;h<upTo;h++){let v=scores[h][p];if(v!=null){gross+=v;st+=<table class="scoretable"><tr><th>Player</th>'+Array.from({length:18},(_,i)=>'<th>'+((i%9)+1)+(i>8?'B':'')+'</th>').join('')+'<th>Gross</th><th>Net</th></tr>';
+ let body=players.map((p,pi)=>{let gross=0,net=0;let cells='';for(let h=0;h<18;h++){let v=scores[h][pi];if(v!=null){let st=<td>'+v+(st?' <span style="font-size:10px">★'+(st>1?'★':'')+'</span>':'')+'</td>'}else cells+='<td>–</td>'}return `<tr><td><b>${esc(p.name)}</b></td>${cells}<td><b>${gross||"–"}</b></td><td class="net">${gross?net:"–"}</td></tr>`}).join('');
  document.getElementById("scoreTable").innerHTML=head+body+"</table>";
 }
 init();
