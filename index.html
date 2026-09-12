@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b5d3b">
+<link rel="manifest" href="manifest.json">
+<title>Golf Scorecard</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f3f5f3;color:#17201b;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}
+.app{max-width:560px;margin:auto;min-height:100vh;padding:14px 14px 36px}.top{text-align:center}
+h1{margin:6px 0 0;font-size:28px}.sub{color:#68736d;margin:2px 0 14px}
+.card{background:#fff;border-radius:17px;padding:16px;margin:10px 0;box-shadow:0 2px 12px #00000012}
+button{border:0;border-radius:12px;padding:12px 15px;font-weight:800;font-size:16px;background:#0b5d3b;color:#fff}
+button.alt{background:#e9efeb;color:#174d36}.row{display:flex;gap:8px;align-items:center}.row>*{flex:1}
+h2{font-size:19px;margin:0 0 12px}h3{margin:0 0 8px}
+input{width:100%;padding:11px;border:2px solid #d2d9d4;border-radius:10px;font-size:17px;background:#fff}
+label{display:block;font-weight:700;font-size:13px;margin:7px 0 4px;color:#4f5b55}
+.grid{display:grid;grid-template-columns:1fr 80px 80px;gap:7px;align-items:center}.grid.head{font-size:12px;color:#68736d;font-weight:800}
+.players{display:grid;grid-template-columns:1fr 80px;gap:7px;align-items:center}
+.small{font-size:13px;color:#68736d}.center{text-align:center}
+.nav{display:flex;gap:8px}.nav button{flex:1}
+.hole{font-size:15px;color:#52605a}.big{font-size:26px;font-weight:900}.player{font-size:24px;font-weight:900}
+.strokes{font-size:18px;letter-spacing:1px;margin-top:3px}.star{font-size:22px}
+.scorebuttons{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-top:14px}
+.scorebuttons button{background:#f0f4f1;color:#163f2d;font-size:23px;padding:14px 5px}
+.scorebuttons button.zero{grid-column:span 4;background:#e9efeb;font-size:15px}
+.notice{background:#eef6f0;border-radius:10px;padding:9px;text-align:center;font-size:13px;margin-top:10px}
+.scoretable{width:100%;border-collapse:collapse;font-size:13px}.scoretable th,.scoretable td{padding:7px 4px;border-bottom:1px solid #e2e7e3;text-align:center}.scoretable th:first-child,.scoretable td:first-child{text-align:left}.scoretable th{color:#68736d}.net{font-weight:900}
+.hidden{display:none}.danger{background:#fff0ee;color:#9c2d22}
+.footer{text-align:center;color:#8a938e;font-size:11px;margin-top:15px}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="top"><h1>GOLF SCORECARD</h1><div class="sub">Riviera Community Club • Anderson Island</div></div>
+
+<div id="home" class="card">
+<h2>Round Setup</h2>
+<div class="small">Up to 5 players • handicaps 0–36</div>
+<div id="playerInputs" style="margin-top:8px"></div>
+<div class="row" style="margin-top:12px"><button onclick="startRound()">Start Round</button><button class="alt" onclick="showSetup()">Course Setup</button></div>
+</div>
+
+<div id="course" class="card hidden">
+<h2>Course Setup</h2>
+<div class="small">Riviera defaults are loaded. Change anything you want and it will be remembered on this phone.</div>
+<div class="grid head" style="margin-top:10px"><div>Hole</div><div>Par</div><div>HCP</div></div>
+<div id="courseInputs"></div>
+<div class="row" style="margin-top:12px"><button onclick="saveCourse();hideCourse()">Save</button><button class="danger" onclick="resetCourse()">Reset Riviera</button></div>
+</div>
+
+<div id="score" class="hidden">
+<div class="card center">
+<div class="hole">HOLE <span id="holeNum"></span> &nbsp; • &nbsp; PAR <span id="holePar"></span> &nbsp; • &nbsp; HCP <span id="holeHcp"></span></div>
+<div class="big" id="roundLabel">Front 9</div>
+<div class="player" id="playerName"></div>
+<div class="strokes" id="playerStrokes"></div>
+<div class="notice">Tap the score. It immediately moves to the next player.</div>
+<div class="scorebuttons" id="scoreButtons"></div>
+<div class="nav" style="margin-top:12px"><button class="alt" onclick="previousPlayer()">← Back</button><button class="alt" onclick="showCard()">Scorecard</button></div>
+</div>
+</div>
+
+<div id="cardView" class="card hidden">
+<h2>Scorecard</h2><div id="scoreTable"></div>
+<div class="nav" style="margin-top:12px"><button onclick="resume()">Continue</button><button class="alt" onclick="newRound()">New Round</button></div>
+</div>
+
+<div class="footer">Riviera default: 9 holes, par 29 • editable course setup</div>
+</div>
+
+<script>
+const DEFAULT_COURSE=[
+ [3,13],[4,7],[3,15],[3,5],[3,3],[3,11],[4,1],[3,9],[3,17]
+];
+let course=JSON.parse(localStorage.getItem("rccCourse")||JSON.stringify(DEFAULT_COURSE));
+let players=[], scores=Array.from({length:18},()=>Array(5).fill(null));
+let hole=0, pi=0;
+
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function init(){
+ let saved=JSON.parse(localStorage.getItem("rccPlayers")||"[]");
+ let a=[];
+ for(let i=0;i<5;i++)a.push(saved[i]||{name:"",hcp:""});
+ document.getElementById("playerInputs").innerHTML=a.map((p,i)=>
+ `<div class="players"><div><label>Player ${i+1} Name</label><input id="n${i}" value="${esc(p.name)}" placeholder="Name"></div>
+ <div><label>Handicap</label><input id="h${i}" type="number" min="0" max="36" inputmode="decimal" value="${p.hcp}" placeholder="0"></div></div>`).join("");
+ renderCourse();
+}
+function renderCourse(){
+ document.getElementById("courseInputs").innerHTML=course.map((x,i)=>
+ `<div class="grid"><div><b>${i+1}</b></div><input id="par${i}" type="number" min="1" max="10" value="${x[0]}"><input id="ch${i}" type="number" min="1" max="18" value="${x[1]}"></div>`).join("");
+}
+function showSetup(){document.getElementById("home").classList.add("hidden");document.getElementById("course").classList.remove("hidden")}
+function hideCourse(){document.getElementById("course").classList.add("hidden");document.getElementById("home").classList.remove("hidden")}
+function saveCourse(){
+ course=course.map((x,i)=>[+document.getElementById("par"+i).value||x[0],+document.getElementById("ch"+i).value||x[1]]);
+ localStorage.setItem("rccCourse",JSON.stringify(course)); renderCourse();
+}
+function resetCourse(){if(confirm("Reset course to Riviera defaults?")){course=JSON.parse(JSON.stringify(DEFAULT_COURSE));localStorage.setItem("rccCourse",JSON.stringify(course));renderCourse()}}
+function startRound(){
+ players=[];
+ for(let i=0;i<5;i++){let n=document.getElementById("n"+i).value.trim(),h=parseFloat(document.getElementById("h"+i).value);if(n)players.push({name:n,hcp:isNaN(h)?0:Math.max(0,Math.min(36,h))});}
+ if(!players.length){alert("Enter at least one player.");return}
+ localStorage.setItem("rccPlayers",JSON.stringify(players));
+ scores=Array.from({length:18},()=>Array(players.length).fill(null));hole=0;pi=0;
+ document.getElementById("home").classList.add("hidden");document.getElementById("score").classList.remove("hidden");document.getElementById("cardView").classList.add("hidden");renderEntry();
+}
+function strokesFor(hcp, hcpHole){
+ // For an 18-hole round played as the same 9 twice, allocate the handicap independently
+ // on each 9. This keeps the phone scorecard intuitive: each 9 has the same stroke pattern.
+ let base=Math.floor(hcp/9), rem=Math.round(hcp%9);
+ return base+(hcpHole<=rem?1:0);
+}
+function renderEntry(){
+ let nine=hole<9?0:1, idx=hole%9, c=course[idx], p=players[pi], s=strokesFor(p.hcp,c[1]);
+ document.getElementById("holeNum").textContent=idx+1;
+ document.getElementById("holePar").textContent=c[0];
+ document.getElementById("holeHcp").textContent=c[1];
+ document.getElementById("roundLabel").textContent=nine?"Back 9":"Front 9";
+ document.getElementById("playerName").textContent=p.name+" • HCP "+p.hcp;
+ document.getElementById("playerStrokes").innerHTML=s?'<span class="star">'+("⭐".repeat(Math.min(s,2)))+"</span> "+s+" stroke"+(s===1?"":"s"):"No stroke";
+ let b=document.getElementById("scoreButtons");b.innerHTML="";
+ for(let n=1;n<=8;n++){let x=document.createElement("button");x.textContent=n;x.onclick=()=>enterScore(n);b.appendChild(x)}
+ let x=document.createElement("button");x.textContent="9 or more";x.className="zero";x.onclick=()=>customScore();b.appendChild(x);
+}
+function enterScore(n){scores[hole][pi]=n;advance()}
+function customScore(){let n=prompt("Enter score");n=parseInt(n);if(n>=1){scores[hole][pi]=n;advance()}}
+function advance(){
+ if(pi<players.length-1){pi++}
+ else if(hole<17){hole++;pi=0}
+ else{showCard();return}
+ renderEntry();
+}
+function previousPlayer(){if(pi>0){pi--}else if(hole>0){hole--;pi=players.length-1}else return;renderEntry()}
+function showCard(){document.getElementById("score").classList.add("hidden");document.getElementById("cardView").classList.remove("hidden");renderCard()}
+function resume(){document.getElementById("cardView").classList.add("hidden");document.getElementById("score").classList.remove("hidden");renderEntry()}
+function newRound(){if(confirm("Start a new round? Scores will be cleared.")){document.getElementById("cardView").classList.add("hidden");document.getElementById("score").classList.add("hidden");document.getElementById("home").classList.remove("hidden");init()}}
+function netFor(p,upTo){let gross=0,st=0;for(let h=0;h<upTo;h++){let v=scores[h][p];if(v!=null){gross+=v;st+=strokesFor(players[p].hcp,course[h%9][1])}}return [gross,st,gross-st]}
+function renderCard(){
+ let head='<table class="scoretable"><tr><th>Player</th>'+Array.from({length:18},(_,i)=>'<th>'+((i%9)+1)+(i>8?'B':'')+'</th>').join('')+'<th>Gross</th><th>Net</th></tr>';
+ let body=players.map((p,pi)=>{let gross=0,net=0;let cells='';for(let h=0;h<18;h++){let v=scores[h][pi];if(v!=null){let st=strokesFor(p.hcp,course[h%9][1]);gross+=v;net+=v-st;cells+='<td>'+v+(st?' <span style="font-size:10px">★'+(st>1?'★':'')+'</span>':'')+'</td>'}else cells+='<td>–</td>'}return `<tr><td><b>${esc(p.name)}</b></td>${cells}<td><b>${gross||"–"}</b></td><td class="net">${gross?net:"–"}</td></tr>`}).join('');
+ document.getElementById("scoreTable").innerHTML=head+body+"</table>";
+}
+init();
+</script>
+</body></html>
